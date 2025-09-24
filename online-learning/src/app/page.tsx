@@ -6,7 +6,7 @@ import { FaStar, FaRegStar } from "react-icons/fa";
 type RatingProps = {
   value: number;
 };
-
+    
 const Rating: React.FC<RatingProps> = ({ value }) => (
   <div className="flex">
     {[...Array(5)].map((_, i) =>
@@ -30,7 +30,7 @@ const LandingPage: React.FC = () => {
     <div className="font-sans text-gray-900">
       {/* Header */}
       <header className="flex justify-between items-center p-6 bg-white shadow-md">
-        <h1 className="text-2xl font-bold">SkillShare</h1>
+        <h1 className="text-2xl font-bold">Scale</h1>
         <div>
           <button
             className="px-4 py-2 mr-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
