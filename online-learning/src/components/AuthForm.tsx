@@ -23,6 +23,8 @@ interface AuthFormProps {
 function LoginForm({ onModeChange, onClose }: { onModeChange: () => void; onClose?: () => void }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showError, setShowError] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const {
@@ -40,24 +42,37 @@ function LoginForm({ onModeChange, onClose }: { onModeChange: () => void; onClos
 
   const selectedRole = watch('role');
 
-  const loginMutation = useMutation({
-    mutationFn: authApi.login,
-    onSuccess: (data) => {
-      if (data.success) {
-        localStorage.setItem('token', data.token!);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        router.push('/firstPage');
-      }
-    },
-    onError: (error: any) => {
-      setShowError(true);
-      console.error('Login failed:', error.response?.data?.message || error.message);
-    },
-  });
+  const onSubmit = async (data: LoginFormData) => {
+    setShowError(false);
+    setIsLoading(true);
+    setError(null);
 
-  const onSubmit = (data: LoginFormData) => {
-    setShowError(false); // Clear any previous errors
-    loginMutation.mutate(data);
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        localStorage.setItem('token', result.token);
+        localStorage.setItem('user', JSON.stringify(result.user));
+        router.push('/firstPage');
+      } else {
+        setError(result.message || 'Login failed');
+        setShowError(true);
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+      setShowError(true);
+      console.error('Login failed:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -129,9 +144,9 @@ function LoginForm({ onModeChange, onClose }: { onModeChange: () => void; onClos
       <Button
         type="submit"
         className="w-full"
-        disabled={loginMutation.isPending}
+        disabled={isLoading}
       >
-        {loginMutation.isPending ? (
+        {isLoading ? (
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             Signing In...
@@ -145,7 +160,7 @@ function LoginForm({ onModeChange, onClose }: { onModeChange: () => void; onClos
       </Button>
 
       {/* Error Messages */}
-      {loginMutation.error && showError && (
+      {error && showError && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-md relative">
           <button
             onClick={() => setShowError(false)}
@@ -154,7 +169,7 @@ function LoginForm({ onModeChange, onClose }: { onModeChange: () => void; onClos
             ✕
           </button>
           <p className="text-sm text-red-600 pr-6">
-            {(loginMutation.error as any)?.response?.data?.message || 'An error occurred. Please try again.'}
+            {error}
           </p>
         </div>
       )}
