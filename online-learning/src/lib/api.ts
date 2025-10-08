@@ -11,12 +11,13 @@ export const authApi = {
       body: JSON.stringify(data),
     });
     
+    const result = await response.json();
+    
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      throw new Error(result.message || `HTTP error! status: ${response.status}`);
     }
     
-    return response.json();
+    return result;
   },
 
   signup: async (data: SignupRequest): Promise<AuthResponse> => {
@@ -28,11 +29,12 @@ export const authApi = {
       body: JSON.stringify(data),
     });
     
+    const result = await response.json();
+    
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      throw new Error(result.message || `HTTP error! status: ${response.status}`);
     }
     
-    return response.json();
+    return result;
   },
 };

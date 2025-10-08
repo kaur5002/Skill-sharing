@@ -23,8 +23,6 @@ interface AuthFormProps {
 function LoginForm({ onModeChange, onClose }: { onModeChange: () => void; onClose?: () => void }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showError, setShowError] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const {
@@ -42,37 +40,24 @@ function LoginForm({ onModeChange, onClose }: { onModeChange: () => void; onClos
 
   const selectedRole = watch('role');
 
-  const onSubmit = async (data: LoginFormData) => {
-    setShowError(false);
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        localStorage.setItem('token', result.token);
-        localStorage.setItem('user', JSON.stringify(result.user));
+  const loginMutation = useMutation({
+    mutationFn: authApi.login,
+    onSuccess: (data) => {
+      if (data.success) {
+        localStorage.setItem('token', data.token!);
+        localStorage.setItem('user', JSON.stringify(data.user));
         router.push('/firstPage');
-      } else {
-        setError(result.message || 'Login failed');
-        setShowError(true);
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+    },
+    onError: (error: any) => {
       setShowError(true);
-      console.error('Login failed:', err);
-    } finally {
-      setIsLoading(false);
-    }
+      console.error('Login failed:', error.message);
+    },
+  });
+
+  const onSubmit = (data: LoginFormData) => {
+    setShowError(false);
+    loginMutation.mutate(data);
   };
 
   return (
@@ -144,9 +129,9 @@ function LoginForm({ onModeChange, onClose }: { onModeChange: () => void; onClos
       <Button
         type="submit"
         className="w-full"
-        disabled={isLoading}
+        disabled={loginMutation.isPending}
       >
-        {isLoading ? (
+        {loginMutation.isPending ? (
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             Signing In...
@@ -160,7 +145,7 @@ function LoginForm({ onModeChange, onClose }: { onModeChange: () => void; onClos
       </Button>
 
       {/* Error Messages */}
-      {error && showError && (
+      {loginMutation.error && showError && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-md relative">
           <button
             onClick={() => setShowError(false)}
@@ -169,7 +154,7 @@ function LoginForm({ onModeChange, onClose }: { onModeChange: () => void; onClos
             ✕
           </button>
           <p className="text-sm text-red-600 pr-6">
-            {error}
+            {(loginMutation.error as any)?.message || 'An error occurred. Please try again.'}
           </p>
         </div>
       )}
@@ -224,7 +209,7 @@ function SignupForm({ onModeChange, onClose }: { onModeChange: () => void; onClo
     },
     onError: (error: any) => {
       setShowError(true);
-      console.error('Signup failed:', error.response?.data?.message || error.message);
+      console.error('Signup failed:', error.message);
     },
   });
 
@@ -365,9 +350,9 @@ function SignupForm({ onModeChange, onClose }: { onModeChange: () => void; onClo
             ✕
           </button>
           <p className="text-sm text-red-600 pr-6">
-            {(signupMutation.error as any)?.response?.data?.message === 'An account with this email already exists' 
+            {(signupMutation.error as any)?.message === 'An account with this email already exists' 
               ? 'This email is already registered. Try logging in instead or use a different email.'
-              : (signupMutation.error as any)?.response?.data?.message || 'An error occurred. Please try again.'
+              : (signupMutation.error as any)?.message || 'An error occurred. Please try again.'
             }
           </p>
         </div>
