@@ -22,10 +22,104 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Relations
+  asTutorSessions   Session[]     @relation("Session_tutor")
+  asLearnerSessions Session[]     @relation("Session_learner")
+  sentMessages      Message[]     @relation("Message_from")
+  receivedMessages  Message[]     @relation("Message_to")
+  paymentsMade      Payment[]     @relation("Payment_learner")
+  paymentsReceived  Payment[]     @relation("Payment_tutor")
+  achievements      Achievement[]
+  tutorProfile      TutorProfile?
+
   @@map("users")
 }
 
 enum Role {
   tutor
   learner
+}
+
+enum SessionStatus {
+  upcoming
+  live
+  completed
+  cancelled
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+}
+
+model Session {
+  id         String        @id @default(auto()) @map("_id") @db.ObjectId
+  title      String
+  tutor      User          @relation("Session_tutor", fields: [tutorId], references: [id])
+  tutorId    String        @db.ObjectId
+  learner    User          @relation("Session_learner", fields: [learnerId], references: [id])
+  learnerId  String        @db.ObjectId
+  startTime  DateTime
+  endTime    DateTime
+  meetingUrl String?
+  status     SessionStatus
+  messages   Message[]
+  payments   Payment[]
+
+  @@map("sessions")
+}
+
+model Message {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  from      User     @relation("Message_from", fields: [fromId], references: [id])
+  fromId    String   @db.ObjectId
+  to        User     @relation("Message_to", fields: [toId], references: [id])
+  toId      String   @db.ObjectId
+  sentAt    DateTime @default(now())
+  text      String
+  read      Boolean  @default(false)
+  session   Session? @relation(fields: [sessionId], references: [id])
+  sessionId String?  @db.ObjectId
+
+  @@map("messages")
+}
+
+model Payment {
+  id         String        @id @default(auto()) @map("_id") @db.ObjectId
+  amount     Float
+  currency   String        @default("USD")
+  status     PaymentStatus
+  createdAt  DateTime      @default(now())
+  session    Session?      @relation(fields: [sessionId], references: [id])
+  sessionId  String?       @db.ObjectId
+  learner    User          @relation("Payment_learner", fields: [learnerId], references: [id])
+  learnerId  String        @db.ObjectId
+  tutor      User          @relation("Payment_tutor", fields: [tutorId], references: [id])
+  tutorId    String        @db.ObjectId
+
+  @@map("payments")
+}
+
+model Achievement {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  title      String
+  description String?
+  unlockedAt DateTime @default(now())
+  icon       String?
+  learner    User     @relation(fields: [learnerId], references: [id])
+  learnerId  String   @db.ObjectId
+
+  @@map("achievements")
+}
+
+model TutorProfile {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @unique @db.ObjectId
+  expertise String[]
+  rating    Float    @default(0)
+  bio       String?
+
+  @@map("tutor_profiles")
 }
