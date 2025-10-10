@@ -31,8 +31,163 @@ model User {
   paymentsReceived  Payment[]     @relation("Payment_tutor")
   achievements      Achievement[]
   tutorProfile      TutorProfile?
+  courses           Course[]
+  availabilitySlots AvailabilitySlot[]
+  notifications     Notification[]
+  enrollments       Enrollment[]
+  coursePosts       CoursePost[]
+  courseComments    CourseComment[]
+  courseReviews     CourseReview[]
+  payouts           Payout[]
+  settings          UserSettings?
+  supportTickets    SupportTicket[] @relation("Ticket_author")
+  reportsMade       UserReport[]     @relation("Report_reporter")
+  reportsReceived   UserReport[]     @relation("Report_subject")
+  learnerProfile    LearnerProfile?
+  savedTutors       SavedTutor[]     @relation("SavedTutor_learner")
+  savedByLearners   SavedTutor[]     @relation("SavedTutor_tutor")
+  favoriteCourses   FavoriteCourse[]
+  paymentMethods    PaymentMethod[]
+  certificates      CourseCertificate[]
+  circleMemberships SkillCircleMember[]
+  circlePosts       SkillCirclePost[] @relation("CirclePost_author")
+  circleComments    SkillCircleComment[] @relation("CircleComment_author")
+  circleMessages    CircleMessage[]   @relation("CircleMessage_author")
+  barterOffers      BarterOffer[]
 
   @@map("users")
+}
+
+model SkillCircle {
+  id          String             @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  topic       String
+  description String?
+  createdAt   DateTime           @default(now())
+  members     SkillCircleMember[]
+  posts       SkillCirclePost[]
+  messages    CircleMessage[]
+
+  @@map("skill_circles")
+}
+
+model SkillCircleMember {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  circle     SkillCircle @relation(fields: [circleId], references: [id])
+  circleId   String   @db.ObjectId
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String   @db.ObjectId
+  role       String   @default("member") // member, moderator
+  joinedAt   DateTime @default(now())
+
+  @@unique([circleId, userId])
+  @@map("skill_circle_members")
+}
+
+model SkillCirclePost {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  circle     SkillCircle @relation(fields: [circleId], references: [id])
+  circleId   String   @db.ObjectId
+  author     User     @relation("CirclePost_author", fields: [authorId], references: [id])
+  authorId   String   @db.ObjectId
+  title      String
+  content    String
+  createdAt  DateTime @default(now())
+  comments   SkillCircleComment[]
+
+  @@map("skill_circle_posts")
+}
+
+model SkillCircleComment {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  post       SkillCirclePost @relation(fields: [postId], references: [id])
+  postId     String   @db.ObjectId
+  author     User     @relation("CircleComment_author", fields: [authorId], references: [id])
+  authorId   String   @db.ObjectId
+  content    String
+  createdAt  DateTime @default(now())
+
+  @@map("skill_circle_comments")
+}
+
+model CircleMessage {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  circle     SkillCircle @relation(fields: [circleId], references: [id])
+  circleId   String   @db.ObjectId
+  author     User     @relation("CircleMessage_author", fields: [authorId], references: [id])
+  authorId   String   @db.ObjectId
+  sentAt     DateTime @default(now())
+  text       String
+
+  @@map("circle_messages")
+}
+
+model BarterOffer {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String   @db.ObjectId
+  offerSkill  String
+  wantSkill   String
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@map("barter_offers")
+}
+
+model PaymentMethod {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @db.ObjectId
+  brand     String   // e.g., visa, mastercard
+  last4     String
+  expMonth  Int
+  expYear   Int
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("payment_methods")
+}
+
+model UserSettings {
+  id              String  @id @default(auto()) @map("_id") @db.ObjectId
+  user            User    @relation(fields: [userId], references: [id])
+  userId          String  @unique @db.ObjectId
+  emailNotifications Boolean @default(true)
+  pushNotifications  Boolean @default(true)
+  theme             String  @default("system") // light, dark, system
+
+  @@map("user_settings")
+}
+
+enum TicketStatus {
+  open
+  pending
+  closed
+}
+
+model SupportTicket {
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  author    User         @relation("Ticket_author", fields: [authorId], references: [id])
+  authorId  String       @db.ObjectId
+  subject   String
+  message   String
+  status    TicketStatus @default(open)
+  createdAt DateTime     @default(now())
+
+  @@map("support_tickets")
+}
+
+model UserReport {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  reporter    User     @relation("Report_reporter", fields: [reporterId], references: [id])
+  reporterId  String   @db.ObjectId
+  subject     User     @relation("Report_subject", fields: [subjectId], references: [id])
+  subjectId   String   @db.ObjectId
+  reason      String
+  createdAt   DateTime @default(now())
+
+  @@map("user_reports")
 }
 
 enum Role {
@@ -66,6 +221,9 @@ model Session {
   status     SessionStatus
   messages   Message[]
   payments   Payment[]
+  course     Course?       @relation(fields: [courseId], references: [id])
+  courseId   String?       @db.ObjectId
+  recordedVideoUrl String?
 
   @@map("sessions")
 }
@@ -93,10 +251,14 @@ model Payment {
   createdAt  DateTime      @default(now())
   session    Session?      @relation(fields: [sessionId], references: [id])
   sessionId  String?       @db.ObjectId
+  course     Course?       @relation(fields: [courseId], references: [id])
+  courseId   String?       @db.ObjectId
+  platformFeeAmount Float  @default(0)
   learner    User          @relation("Payment_learner", fields: [learnerId], references: [id])
   learnerId  String        @db.ObjectId
   tutor      User          @relation("Payment_tutor", fields: [tutorId], references: [id])
   tutorId    String        @db.ObjectId
+  refundRequests RefundRequest[]
 
   @@map("payments")
 }
@@ -120,6 +282,315 @@ model TutorProfile {
   expertise String[]
   rating    Float    @default(0)
   bio       String?
+  sessionPrice             Float?   @default(0)
+  coursePriceDefault       Float?   @default(0)
+  subscriptionMonthlyPrice Float?   @default(0)
+  commissionPercent        Float    @default(15)
+  certificates        Certificate[]
+  verificationRequests VerificationRequest[]
+  socialLinks          SocialLink[]
 
   @@map("tutor_profiles")
+}
+
+enum SkillLevel {
+  beginner
+  intermediate
+  advanced
+}
+
+enum MaterialType {
+  pdf
+  video
+  slide
+  image
+  other
+}
+
+model Course {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  tutor           User           @relation(fields: [tutorId], references: [id])
+  tutorId         String         @db.ObjectId
+  title           String
+  description     String
+  price           Float          @default(0)
+  durationMinutes Int            @default(60)
+  skillLevel      SkillLevel     @default(beginner)
+  category        String?
+  tags            String[]
+  coverImageUrl   String?
+  introVideoUrl   String?
+  isPublished     Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  materials       CourseMaterial[]
+  sessions        Session[]
+  enrollments     Enrollment[]
+  posts           CoursePost[]
+  announcements   CourseAnnouncement[]
+  reviews         CourseReview[]
+  payments        Payment[]
+  favorites       FavoriteCourse[]
+  certificates    CourseCertificate[]
+
+  @@map("courses")
+}
+
+model CourseCertificate {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  course     Course   @relation(fields: [courseId], references: [id])
+  courseId   String   @db.ObjectId
+  learner    User     @relation(fields: [learnerId], references: [id])
+  learnerId  String   @db.ObjectId
+  issuedAt   DateTime @default(now())
+  url        String?
+
+  @@unique([courseId, learnerId])
+  @@map("course_certificates")
+}
+
+model CourseMaterial {
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  course    Course       @relation(fields: [courseId], references: [id])
+  courseId  String       @db.ObjectId
+  type      MaterialType
+  title     String
+  url       String
+  createdAt DateTime     @default(now())
+
+  @@map("course_materials")
+}
+
+model AvailabilitySlot {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  tutor     User     @relation(fields: [tutorId], references: [id])
+  tutorId   String   @db.ObjectId
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  timezone  String   @default("UTC")
+
+  @@map("availability_slots")
+}
+
+model Certificate {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  tutorProfile   TutorProfile @relation(fields: [tutorProfileId], references: [id])
+  tutorProfileId String       @db.ObjectId
+  title          String
+  issuer         String
+  issueDate      DateTime?
+  url            String?
+  createdAt      DateTime     @default(now())
+
+  @@map("certificates")
+}
+
+model VerificationRequest {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  tutorProfile   TutorProfile @relation(fields: [tutorProfileId], references: [id])
+  tutorProfileId String       @db.ObjectId
+  status         String       @default("pending")
+  documents      String[]
+  submittedAt    DateTime     @default(now())
+  reviewedAt     DateTime?
+  note           String?
+
+  @@map("verification_requests")
+}
+
+model SocialLink {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  tutorProfile   TutorProfile @relation(fields: [tutorProfileId], references: [id])
+  tutorProfileId String       @db.ObjectId
+  provider       String
+  url            String
+
+  @@map("social_links")
+}
+
+model Notification {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @db.ObjectId
+  type      String
+  title     String?
+  body      String?
+  data      Json?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+model Enrollment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  course    Course   @relation(fields: [courseId], references: [id])
+  courseId  String   @db.ObjectId
+  learner   User     @relation(fields: [learnerId], references: [id])
+  learnerId String   @db.ObjectId
+  status    String   @default("enrolled") // enrolled, completed, pending
+  createdAt DateTime @default(now())
+  progress  CourseProgress[]
+
+  @@unique([courseId, learnerId])
+  @@map("enrollments")
+}
+
+model LearnerProfile {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String   @unique @db.ObjectId
+  bio         String?
+  goals       String?
+  interests   String[]
+  categories  String[]
+  photoUrl    String?
+
+  @@map("learner_profiles")
+}
+
+model SavedTutor {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  learner   User     @relation("SavedTutor_learner", fields: [learnerId], references: [id])
+  learnerId String   @db.ObjectId
+  tutor     User     @relation("SavedTutor_tutor", fields: [tutorId], references: [id])
+  tutorId   String   @db.ObjectId
+  createdAt DateTime @default(now())
+
+  @@unique([learnerId, tutorId])
+  @@map("saved_tutors")
+}
+
+model FavoriteCourse {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  learner   User    @relation(fields: [learnerId], references: [id])
+  learnerId String  @db.ObjectId
+  course    Course  @relation(fields: [courseId], references: [id])
+  courseId  String  @db.ObjectId
+  createdAt DateTime @default(now())
+
+  @@unique([learnerId, courseId])
+  @@map("favorite_courses")
+}
+
+model CourseProgress {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
+  enrollmentId String  @db.ObjectId
+  lessonId   String
+  completed  Boolean   @default(false)
+  completedAt DateTime?
+
+  @@unique([enrollmentId, lessonId])
+  @@map("course_progress")
+}
+
+enum RefundStatus {
+  requested
+  approved
+  rejected
+  refunded
+}
+
+model RefundRequest {
+  id         String       @id @default(auto()) @map("_id") @db.ObjectId
+  payment    Payment      @relation(fields: [paymentId], references: [id])
+  paymentId  String       @db.ObjectId
+  reason     String
+  status     RefundStatus @default(requested)
+  createdAt  DateTime     @default(now())
+
+  @@map("refund_requests")
+}
+
+model CoursePost {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  course    Course   @relation(fields: [courseId], references: [id])
+  courseId  String   @db.ObjectId
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String   @db.ObjectId
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  comments  CourseComment[]
+
+  @@map("course_posts")
+}
+
+model CourseComment {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  post      CoursePost @relation(fields: [postId], references: [id])
+  postId    String     @db.ObjectId
+  author    User       @relation(fields: [authorId], references: [id])
+  authorId  String     @db.ObjectId
+  content   String
+  createdAt DateTime   @default(now())
+
+  @@map("course_comments")
+}
+
+model CourseAnnouncement {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  course    Course   @relation(fields: [courseId], references: [id])
+  courseId  String   @db.ObjectId
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+
+  @@map("course_announcements")
+}
+
+model CourseReview {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  course    Course   @relation(fields: [courseId], references: [id])
+  courseId  String   @db.ObjectId
+  learner   User     @relation(fields: [learnerId], references: [id])
+  learnerId String   @db.ObjectId
+  rating    Int
+  comment   String?
+  reply     String?
+  replyAt   DateTime?
+  createdAt DateTime @default(now())
+  reports   ReviewReport[]
+
+  @@unique([courseId, learnerId])
+  @@map("course_reviews")
+}
+
+enum ReviewReportStatus {
+  open
+  resolved
+  rejected
+}
+
+model ReviewReport {
+  id        String             @id @default(auto()) @map("_id") @db.ObjectId
+  review    CourseReview       @relation(fields: [reviewId], references: [id])
+  reviewId  String             @db.ObjectId
+  reason    String
+  status    ReviewReportStatus @default(open)
+  createdAt DateTime           @default(now())
+
+  @@map("review_reports")
+}
+
+enum PayoutStatus {
+  requested
+  approved
+  paid
+  rejected
+}
+
+model Payout {
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  tutor     User         @relation(fields: [tutorId], references: [id])
+  tutorId   String       @db.ObjectId
+  amount    Float
+  status    PayoutStatus @default(requested)
+  method    String
+  destination String?
+  createdAt DateTime     @default(now())
+
+  @@map("payouts")
 }

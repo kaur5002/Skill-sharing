@@ -82,3 +82,13 @@ export type Achievement = z.infer<typeof AchievementSchema>;
 export type Session = z.infer<typeof SessionSchema>;
 export type DashboardSummary = z.infer<typeof DashboardSummarySchema>;
 export type DashboardData = z.infer<typeof DashboardDataSchema>;
+
+// Tutor
+export const TutorSummarySchema = z.object({
+  nextSessionAt: z.string().nullable(),
+  unreadMessages: z.number().int().nonnegative(),
+  totalTeachingHours: z.number().nonnegative(),
+  totalEarnings: z.number().nonnegative(),
+  studentsCount: z.number().int().nonnegative(),
+});
+export type TutorSummary = z.infer<typeof TutorSummarySchema>;
