@@ -1,6 +1,6 @@
 // app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { DatabaseService } from '@/lib/database';
+import { PrismaDatabaseService } from '@/lib/prisma-database';
 import { verifyPassword, generateToken } from '@/lib/auth';
 import { LoginRequest } from '@/types/user';
 
@@ -21,9 +21,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user using MongoDB database
+    // Find user using Prisma database
     console.log('🔍 Looking for user with email:', email, 'and role:', role);
-    const user = await DatabaseService.findUserByEmail(email, role);
+    const user = await PrismaDatabaseService.findUserByEmail(email, role);
     if (!user) {
       console.log('❌ User not found');
       return NextResponse.json(

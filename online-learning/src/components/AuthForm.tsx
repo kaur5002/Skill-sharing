@@ -52,6 +52,13 @@ function LoginForm({ onModeChange, onClose }: { onModeChange: () => void; onClos
     onError: (error: any) => {
       setShowError(true);
       console.error('Login failed:', error.message);
+      
+      // Handle specific error cases
+      if (error.message?.includes('<!DOCTYPE') || error.message?.includes('Unexpected token')) {
+        error.message = 'Server error occurred. Please check if the database is connected and try again.';
+      } else if (error.message?.includes('Network Error') || error.message?.includes('fetch')) {
+        error.message = 'Network error. Please check your internet connection and try again.';
+      }
     },
   });
 
@@ -210,6 +217,15 @@ function SignupForm({ onModeChange, onClose }: { onModeChange: () => void; onClo
     onError: (error: any) => {
       setShowError(true);
       console.error('Signup failed:', error.message);
+      
+      // Handle specific error cases for better user experience
+      if (error.message?.includes('<!DOCTYPE') || error.message?.includes('Unexpected token')) {
+        error.message = 'Database connection error. Please try again later or contact support if the issue persists.';
+      } else if (error.message?.includes('Network Error') || error.message?.includes('fetch')) {
+        error.message = 'Network error. Please check your internet connection and try again.';
+      } else if (error.message?.includes('timeout')) {
+        error.message = 'Request timed out. Please check your connection and try again.';
+      }
     },
   });
 

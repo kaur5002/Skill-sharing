@@ -1,6 +1,6 @@
 // app/api/auth/signup/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { DatabaseService } from '@/lib/database';
+import { PrismaDatabaseService } from '@/lib/prisma-database';
 import { hashPassword, generateToken } from '@/lib/auth';
 import { SignupRequest } from '@/types/user';
 
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user already exists with any role
     console.log('🔍 Checking if user exists with email:', email);
-    const existingUser = await DatabaseService.findUserByEmail(email);
+    const existingUser = await PrismaDatabaseService.findUserByEmail(email);
     if (existingUser) {
       console.log('❌ User already exists');
       return NextResponse.json(
@@ -52,9 +52,9 @@ export async function POST(request: NextRequest) {
     console.log('🔐 Hashing password');
     const hashedPassword = await hashPassword(password);
 
-    // Create user using MongoDB database
+    // Create user using Prisma database
     console.log('💾 Creating user in database');
-    const newUser = await DatabaseService.createUser({
+    const newUser = await PrismaDatabaseService.createUser({
       name,
       email,
       password: hashedPassword,
