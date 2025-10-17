@@ -1,0 +1,77 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Prisma: generate client",
+			"type": "shell",
+			"command": "npm run -w online-learning prisma:generate",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Prisma: db push",
+			"type": "shell",
+			"command": "npm run -w online-learning prisma:push",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Prisma: generate client (correct)",
+			"type": "shell",
+			"command": "npm run -w online-learning db:generate",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Next.js build",
+			"type": "shell",
+			"command": "npm run -w online-learning build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Next.js typecheck",
+			"type": "shell",
+			"command": "npm run -w online-learning build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Prisma: generate + push (payment methods)",
+			"type": "shell",
+			"command": "cd /Users/satvirkaur/Desktop/UserPlatform/Skill-sharing/online-learning && npx prisma generate && npx prisma db push",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Prisma: generate + push (certificates)",
+			"type": "shell",
+			"command": "cd /Users/satvirkaur/Desktop/UserPlatform/Skill-sharing/online-learning && npx prisma generate && npx prisma db push",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Prisma: generate + push (community)",
+			"type": "shell",
+			"command": "cd /Users/satvirkaur/Desktop/UserPlatform/Skill-sharing/online-learning && npx prisma generate && npx prisma db push",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		}
+	]
+}
