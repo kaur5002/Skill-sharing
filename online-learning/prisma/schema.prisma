@@ -213,12 +213,19 @@ model Session {
   title      String
   tutor      User          @relation("Session_tutor", fields: [tutorId], references: [id])
   tutorId    String        @db.ObjectId
-  learner    User          @relation("Session_learner", fields: [learnerId], references: [id])
-  learnerId  String        @db.ObjectId
+  // Learner can be optional to allow course-wide/group sessions
+  learner    User?         @relation("Session_learner", fields: [learnerId], references: [id])
+  learnerId  String?       @db.ObjectId
   startTime  DateTime
   endTime    DateTime
   meetingUrl String?
+  meetingPlatform String?
+  description String?
+  // Optional type label, e.g., live, review, recorded
+  type       String?       @default("live")
   status     SessionStatus
+  canceledAt DateTime?
+  canceledReason String?
   messages   Message[]
   payments   Payment[]
   course     Course?       @relation(fields: [courseId], references: [id])

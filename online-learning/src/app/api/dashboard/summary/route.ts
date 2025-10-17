@@ -15,10 +15,6 @@ export async function GET(req: NextRequest) {
     });
 
     const unreadMessages = await prisma.message.count({ where: { toId: user.userId, read: false } });
-    const totalHoursAgg = await prisma.session.aggregate({
-      where: { learnerId: user.userId, status: 'completed' as any },
-      _sum: { /* MongoDB doesn't support date diff aggregation via Prisma; approximate client-side */ },
-    });
     // Fallback simple count for now
     const completedSessions = await prisma.session.findMany({ where: { learnerId: user.userId, status: 'completed' as any }, select: { startTime: true, endTime: true } });
     const totalHours = completedSessions.reduce((acc, s) => acc + (new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / 36e5, 0);

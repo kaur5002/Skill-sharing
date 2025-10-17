@@ -2,19 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthUser } from '@/lib/api-helpers';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, context: any) {
   const user = getAuthUser(req);
   if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   if (user.role !== 'tutor') return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  const { params } = context as { params: { id: string } };
   const courseId = params.id;
   const materials = await prisma.courseMaterial.findMany({ where: { courseId } });
   return NextResponse.json(materials);
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, context: any) {
   const user = getAuthUser(req);
   if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   if (user.role !== 'tutor') return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  const { params } = context as { params: { id: string } };
   const courseId = params.id;
   const body = await req.json().catch(() => ({}));
   const { type, title, url } = body as { type: 'pdf' | 'video' | 'slide' | 'image' | 'other'; title: string; url: string };
@@ -26,10 +28,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   return NextResponse.json(created, { status: 201 });
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, context: any) {
   const user = getAuthUser(req);
   if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   if (user.role !== 'tutor') return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  const { params } = context as { params: { id: string } };
   const courseId = params.id;
   const { searchParams } = new URL(req.url);
   const materialId = searchParams.get('materialId');

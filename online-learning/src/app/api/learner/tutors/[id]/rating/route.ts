@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthUser } from '@/lib/api-helpers';
 
-type Params = { params: { id: string } };
-
-export async function GET(req: NextRequest, { params }: Params) {
+export async function GET(req: NextRequest, context: any) {
   const auth = getAuthUser(req);
   if (!auth) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  const { params } = context as { params: { id: string } };
   const tutorId = params.id;
   const courses = await prisma.course.findMany({ where: { tutorId }, select: { id: true } });
   const ids = courses.map(c => c.id);
